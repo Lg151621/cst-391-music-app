@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPool } from "@/lib/db";
+import { getPool } from "@/src/lib/db";
 
 // ✅ GET /api/artists - Retrieve all distinct artists
 export async function GET() {
