@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
 
 // ✅ Update an existing album by ID
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: NextRequest, context: any) {
   const db = getPool();
   const client = await db.connect();
 
@@ -20,7 +20,6 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
 
     await client.query("BEGIN");
 
-    // ✅ Update main album info (includes image)
     await client.query(
       `
       UPDATE albums
@@ -30,7 +29,6 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
       [artist, title, year, description, image, albumId]
     );
 
-    // ✅ Safely handle tracks (update existing or insert new)
     if (Array.isArray(tracks) && tracks.length > 0) {
       for (const track of tracks) {
         const { id, title, number, video_url, lyrics } = track;
@@ -68,7 +66,7 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
   }
 }
 
-// ✅ Helper to attach tracks to albums
+// ✅ Helper
 async function attachTracksToAlbums(albums: any[], db: any) {
   const albumIds = albums.map((album) => album.id);
   if (albumIds.length === 0) return albums;
@@ -91,7 +89,7 @@ async function attachTracksToAlbums(albums: any[], db: any) {
 }
 
 // ✅ GET a single album by ID
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: any) {
   try {
     const db = getPool();
     const albumId = parseInt(context.params.id, 10);
@@ -117,7 +115,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 }
 
 // ✅ DELETE an album by ID
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: any) {
   try {
     const db = getPool();
     const albumId = parseInt(context.params.id, 10);
