@@ -1,27 +1,35 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Allow frontend origin
-const allowedOrigin = "https://music-next-eight.vercel.app";
+// Allow both local + Vercel frontend origins
+const allowedOrigins = [
+  "https://music-next-eight.vercel.app", // ✅ your frontend production domain
+  "http://localhost:3000",               // ✅ local dev
+];
 
 export function middleware(req: NextRequest) {
-  const origin = req.headers.get("origin");
-
-  // Only add headers for actual browser requests
+  const origin = req.headers.get("origin") || "";
   const res = NextResponse.next();
 
-  if (origin === allowedOrigin) {
+  // ✅ Check if the origin is allowed
+  if (allowedOrigins.includes(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
   }
 
-  // Always allow preflight + basic headers
+  // ✅ Always add these headers (for preflight and actual requests)
   res.headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.headers.set("Access-Control-Allow-Credentials", "true");
+
+  // ✅ Handle OPTIONS requests (preflight)
+  if (req.method === "OPTIONS") {
+    return new NextResponse(null, { status: 204, headers: res.headers });
+  }
 
   return res;
 }
 
-// Match all /api routes
+// ✅ Apply to all /api routes
 export const config = {
   matcher: "/api/:path*",
 };
