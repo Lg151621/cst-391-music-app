@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPool } from "@/src/lib/db";
+import { getPool } from 'lib/db';
 
 export async function GET() {
   const environment = process.env.NODE_ENV;

@@ -7,7 +7,7 @@ export function getPool(): Pool {
   if (!pool) {
     const URL = process.env.POSTGRES_URL ?? process.env.DATABASE_URL;
     if (!URL) {
-      throw new Error("❌ POSTGRES_URL or DATABASE_URL not set");
+      throw new Error("POSTGRES_URL or DATABASE_URL not set");
     }
 
     pool = new Pool({
@@ -22,7 +22,7 @@ export function getPool(): Pool {
   return pool;
 }
 
-// Optional helper to get a client with automatic cleanup
+// helper to get a client with automatic cleanup
 export async function getClient(): Promise<PoolClient> {
   const db = getPool();
   const client = await db.connect();

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "@/src/lib/db";
+import { getPool } from 'lib/db';
 
 // ✅ Update an existing album by ID
 export async function PUT(req: NextRequest, context: any) {

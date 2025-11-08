@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "@/src/lib/db";
+import { getPool } from 'lib/db';
 
 // POST /api/tracks - Create a new track
 export async function POST(req: NextRequest) {

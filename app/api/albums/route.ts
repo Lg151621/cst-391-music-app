@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "@/src/lib/db";
+import { getPool } from 'lib/db';
 
 // fetch tracks for one or more albums
 async function attachTracksToAlbums(albums: any[], db: any) {

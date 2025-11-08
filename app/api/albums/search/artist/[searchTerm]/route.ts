@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "@/src/lib/db";
+import { getPool } from 'lib/db';
 
 async function attachTracksToAlbums(albums: any[], db: any) {
   const albumIds = albums.map((album) => album.id);
