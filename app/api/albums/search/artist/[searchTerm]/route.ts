@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getPool } from '..../../../lib/db'
+import { getPool } from '@/lib/db';
 
 async function attachTracksToAlbums(albums: any[], db: any) {
   const albumIds = albums.map(album => album.id)
@@ -38,4 +38,3 @@ export async function GET(
     return NextResponse.json({ error: 'There was an error searching albums by artist.' }, { status: 500 })
   }
 }
-

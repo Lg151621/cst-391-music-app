@@ -1,6 +1,6 @@
 // pages/api/db-check.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getPool } from '../../../lib/db';
+import { getPool } from '@/lib/db';
 
 const environment = process.env.NODE_ENV;
 const dbUrl = process.env.POSTGRES_URL ?? process.env.DATABASE_URL;
