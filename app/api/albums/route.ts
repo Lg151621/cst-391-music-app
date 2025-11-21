@@ -9,7 +9,7 @@ import { getPool } from "lib/db";
 // Frontend origin that is allowed to call this API
 const allowedOrigin =
   process.env.ALLOWED_ORIGIN ??
-  "https://music-next-eight.vercel.app/";
+  "https://music-next-eight.vercel.app";
 
 function corsHeaders() {
   return {
