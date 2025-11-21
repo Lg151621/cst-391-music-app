@@ -1,5 +1,46 @@
+// app/api/albums/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from 'lib/db';
+import { getPool } from "lib/db";
+
+// ---------------------------------------------------------------------
+// CORS setup
+// ---------------------------------------------------------------------
+
+// Frontend origin that is allowed to call this API
+const allowedOrigin =
+  process.env.ALLOWED_ORIGIN ??
+  "https://music-next-8j50pvh9u-leonardo-godinezs-projects.vercel.app";
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "GET,POST,PUT,OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
+
+// Helper to always include CORS headers on JSON responses
+function jsonWithCors(data: any, init?: ResponseInit) {
+  return NextResponse.json(data, {
+    ...init,
+    headers: {
+      ...(init?.headers || {}),
+      ...corsHeaders(),
+    },
+  });
+}
+
+// Handle CORS preflight requests
+export function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: corsHeaders(),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Helper: attach tracks to albums
+// ---------------------------------------------------------------------
 
 // fetch tracks for one or more albums
 async function attachTracksToAlbums(albums: any[], db: any) {
@@ -23,7 +64,10 @@ async function attachTracksToAlbums(albums: any[], db: any) {
   }));
 }
 
+// ---------------------------------------------------------------------
 // ✅ GET /api/albums — or /api/albums?albumId=#
+// ---------------------------------------------------------------------
+
 export async function GET(req: NextRequest) {
   try {
     const db = getPool();
@@ -34,9 +78,11 @@ export async function GET(req: NextRequest) {
     if (albumIdParam) {
       const albumId = parseInt(albumIdParam, 10);
       if (isNaN(albumId)) {
-        return NextResponse.json({ error: "Invalid albumId" }, { status: 400 });
+        return jsonWithCors({ error: "Invalid albumId" }, { status: 400 });
       }
-      const result = await db.query("SELECT * FROM albums WHERE id = $1", [albumId]);
+      const result = await db.query("SELECT * FROM albums WHERE id = $1", [
+        albumId,
+      ]);
       albums = result.rows;
     } else {
       const result = await db.query("SELECT * FROM albums");
@@ -44,17 +90,20 @@ export async function GET(req: NextRequest) {
     }
 
     const albumsWithTracks = await attachTracksToAlbums(albums, db);
-    return NextResponse.json(albumsWithTracks);
+    return jsonWithCors(albumsWithTracks);
   } catch (error: any) {
     console.error("[albums][GET][Error]", error);
-    return NextResponse.json(
+    return jsonWithCors(
       { error: "There was an error when fetching albums" },
       { status: 500 }
     );
   }
 }
 
+// ---------------------------------------------------------------------
 // ✅ POST /api/albums — Create album
+// ---------------------------------------------------------------------
+
 export async function POST(req: NextRequest) {
   const db = getPool();
   const client = await db.connect();
@@ -64,7 +113,7 @@ export async function POST(req: NextRequest) {
     const { artist, title, year, description, image, tracks } = body;
 
     if (!artist || !title) {
-      return NextResponse.json(
+      return jsonWithCors(
         { error: "artist and title are required" },
         { status: 400 }
       );
@@ -91,11 +140,11 @@ export async function POST(req: NextRequest) {
     }
 
     await client.query("COMMIT");
-    return NextResponse.json({ albumId }, { status: 201 });
+    return jsonWithCors({ albumId }, { status: 201 });
   } catch (err: any) {
     await client.query("ROLLBACK");
     console.error("[albums][POST][Error]", err);
-    return NextResponse.json(
+    return jsonWithCors(
       { error: "There was an error when creating album" },
       { status: 500 }
     );
@@ -104,7 +153,10 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// ---------------------------------------------------------------------
 // ✅ PUT /api/albums — Update album and its tracks
+// ---------------------------------------------------------------------
+
 export async function PUT(req: NextRequest) {
   const db = getPool();
   const client = await db.connect();
@@ -114,7 +166,7 @@ export async function PUT(req: NextRequest) {
     const { albumId, artist, title, year, description, tracks } = body;
 
     if (!albumId) {
-      return NextResponse.json(
+      return jsonWithCors(
         { error: "albumId is required" },
         { status: 400 }
       );
@@ -139,13 +191,13 @@ export async function PUT(req: NextRequest) {
     }
 
     await client.query("COMMIT");
-    return NextResponse.json({
+    return jsonWithCors({
       message: `Album ${albumId} and tracks updated.`,
     });
   } catch (err: any) {
     await client.query("ROLLBACK");
     console.error("[albums][PUT][Error]", err);
-    return NextResponse.json(
+    return jsonWithCors(
       { error: "There was an error updating album." },
       { status: 500 }
     );
