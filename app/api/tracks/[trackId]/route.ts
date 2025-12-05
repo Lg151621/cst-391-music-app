@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "lib/db";
 
-// GET /api/tracks/:trackId
+import { getPool } from 'lib/db';
+
+// GET /api/tracks/:trackId/reviews
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ trackId: string }> }
@@ -12,40 +13,61 @@ export async function GET(
 
     if (Number.isNaN(trackId)) {
       return NextResponse.json(
-        { error: "Invalid track id." },
+        { error: "Invalid trackId parameter." },
         { status: 400 }
       );
     }
 
     const db = getPool();
 
-    const result = await db.query(
+    // 1) Return ALL reviews (including hidden)
+    const reviewsResult = await db.query(
       `
       SELECT
         id,
-        album_id,
-        title,
-        number,
-        video_url,
-        lyrics
-      FROM tracks
-      WHERE id = $1
+        track_id,
+        user_id,
+        rating,
+        comment,
+        is_hidden,
+        created_at,
+        updated_at
+      FROM reviews
+      WHERE track_id = $1
+      ORDER BY created_at DESC
       `,
       [trackId]
     );
 
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Track not found." },
-        { status: 404 }
-      );
-    }
+    // 2) Summary ONLY on non-hidden reviews
+    const summaryResult = await db.query(
+      `
+      SELECT
+        COALESCE(AVG(rating), 0) AS average_rating,
+        COUNT(*) AS total_reviews
+      FROM reviews
+      WHERE track_id = $1
+        AND is_hidden = FALSE
+      `,
+      [trackId]
+    );
 
-    return NextResponse.json(result.rows[0], { status: 200 });
-  } catch (err: unknown) {
-    console.error("[tracks/:trackId][GET][Error]", err);
-    const message =
-      err instanceof Error ? err.message : "Error fetching track.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const summary = summaryResult.rows[0];
+
+    return NextResponse.json(
+      {
+        trackId,
+        averageRating: Number(summary.average_rating),
+        totalReviews: Number(summary.total_reviews),
+        reviews: reviewsResult.rows, // includes hidden + visible
+      },
+      { status: 200 }
+    );
+  } catch (err: any) {
+    console.error("[reviews][GET][Error]", err);
+    return NextResponse.json(
+      { error: err.message ?? "Error fetching reviews." },
+      { status: 500 }
+    );
   }
 }
