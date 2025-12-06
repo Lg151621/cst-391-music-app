@@ -1,10 +1,15 @@
+// app/api/tracks/[trackId]/reviews/[reviewId]/visibility/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getPool } from "lib/db";
+import {
+  updateTrackReviewVisibility,
+  ValidationError,
+} from "lib/services/reviewService";
 
-// PUT /api/tracks/:trackId/reviews/:reviewId/visibility
+type Params = { trackId: string; reviewId: string };
+
 export async function PUT(
   req: NextRequest,
-  context: { params: Promise<{ trackId: string; reviewId: string }> }
+  context: { params: Promise<Params> }
 ) {
   try {
     const { trackId: trackIdParam, reviewId: reviewIdParam } =
@@ -13,48 +18,23 @@ export async function PUT(
     const trackId = parseInt(trackIdParam, 10);
     const reviewId = parseInt(reviewIdParam, 10);
 
-    if (Number.isNaN(trackId) || Number.isNaN(reviewId)) {
-      return NextResponse.json(
-        { error: "Invalid trackId or reviewId." },
-        { status: 400 }
-      );
-    }
-
     const body = await req.json();
     const { is_hidden } = body;
 
-    if (typeof is_hidden !== "boolean") {
-      return NextResponse.json(
-        { error: "is_hidden must be a boolean." },
-        { status: 400 }
-      );
-    }
-
-    const db = getPool();
-
-    const result = await db.query(
-      `
-      UPDATE reviews
-      SET
-        is_hidden = $1,
-        updated_at = NOW()
-      WHERE id = $2 AND track_id = $3
-      RETURNING
-        id, track_id, user_id, rating, comment, is_hidden, created_at, updated_at
-      `,
-      [is_hidden, reviewId, trackId]
+    const updated = await updateTrackReviewVisibility(
+      trackId,
+      reviewId,
+      is_hidden
     );
 
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: "Review not found." },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(result.rows[0], { status: 200 });
+    return NextResponse.json(updated, { status: 200 });
   } catch (err: any) {
     console.error("[visibility][PUT][Error]", err);
+    if (err instanceof ValidationError) {
+      const status =
+        err.message === "Review not found." ? 404 : 400;
+      return NextResponse.json({ error: err.message }, { status });
+    }
     return NextResponse.json(
       { error: err.message ?? "Error updating visibility." },
       { status: 500 }
